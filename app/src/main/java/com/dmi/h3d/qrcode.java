@@ -1,54 +1,176 @@
 package com.dmi.h3d;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.budiyev.android.codescanner.CodeScanner;
+import com.budiyev.android.codescanner.CodeScannerView;
+import com.budiyev.android.codescanner.DecodeCallback;
+import com.google.firebase.database.annotations.NotNull;
+import com.google.zxing.Result;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.journeyapps.barcodescanner.CaptureActivity;
 
+
 public class qrcode extends AppCompatActivity {
-    Button button;
+
+    private CodeScanner mCodeScanner;
+    boolean CameraPermission = false;
+    final int CAMERA_PERM = 1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_qrcode);
+        CodeScannerView scannerView = findViewById(R.id.scanner_view);
+        mCodeScanner = new CodeScanner(this,scannerView);
+        askPermission();
+        if (CameraPermission) {
 
-        IntentIntegrator intentIntegrator = new IntentIntegrator(
-                (Activity) qrcode.this
-        );
-        intentIntegrator.setBeepEnabled(false);
-        intentIntegrator.setOrientationLocked(true);
-        intentIntegrator.setCaptureActivity(Capture.class);
-        intentIntegrator.initiateScan();
-        finish();
+            scannerView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    mCodeScanner.startPreview();
+
+                }
+            });
+
+            mCodeScanner.setDecodeCallback(new DecodeCallback() {
+                @Override
+                public void onDecoded(@NonNull @NotNull Result result) {
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Integer i=new Integer(result.getText());
+                                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                intent.putExtra("Номер карты", i);
+                                startActivity(intent);
+                            }
+                    });
+
+                }
+            });
+
+        }
+    }
+
+    private void askPermission(){
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP){
+
+
+            if (ActivityCompat.checkSelfPermission(this,Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ){
+
+                ActivityCompat.requestPermissions(qrcode.this,new String[]{Manifest.permission.CAMERA},CAMERA_PERM);
+
+
+            }else {
+
+                mCodeScanner.startPreview();
+                CameraPermission = true;
+            }
+
+        }
+
+
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        IntentResult intentResult=IntentIntegrator.parseActivityResult(
-                requestCode,resultCode,data
-        );
-        if (intentResult.getContents()!=  null){
-            Integer a=new Integer(intentResult.getContents());
-            if (a==1000){
-                Intent intent =  new Intent(this, splashscreen.class);
-                startActivity(intent);
-                finish();
+    public void onRequestPermissionsResult(int requestCode, @NonNull @NotNull String[] permissions, @NonNull @NotNull int[] grantResults) {
+
+        if (requestCode == CAMERA_PERM){
+
+
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+
+                mCodeScanner.startPreview();
+                CameraPermission = true;
+            }else {
+
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)){
+
+                    new AlertDialog.Builder(this)
+                            .setTitle("Permission")
+                            .setMessage("Please provide the camera permission for using all the features of the app")
+                            .setPositiveButton("Proceed", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                    ActivityCompat.requestPermissions(qrcode.this,new String[]{Manifest.permission.CAMERA},CAMERA_PERM);
+
+                                }
+                            }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                    dialog.dismiss();
+
+                                }
+                            }).create().show();
+
+                }else {
+
+                    new AlertDialog.Builder(this)
+                            .setTitle("Permission")
+                            .setMessage("You have denied some permission. Allow all permission at [Settings] > [Permissions]")
+                            .setPositiveButton("Settings", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                    dialog.dismiss();
+                                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.fromParts("package",getPackageName(),null));
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    startActivity(intent);
+                                    finish();
+
+
+                                }
+                            }).setNegativeButton("No, Exit app", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                    dialog.dismiss();
+                                    finish();
+
+                                }
+                            }).create().show();
+
+
+
+                }
+
             }
 
-        }else {
-            Toast.makeText(getApplicationContext(), "Ошибка входа",Toast.LENGTH_LONG).show();
         }
+
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    protected void onPause() {
+        if (CameraPermission){
+            mCodeScanner.releaseResources();
+        }
+
+        super.onPause();
     }
 }
