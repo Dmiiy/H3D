@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
                     Anchor anchor = hitResult.createAnchor();
                     if (num.equals("1")) {
                         ModelRenderable.builder()
-                                .setSource(this, R.raw.money)
+                                .setSource(this, R.raw.monument)
                                 .setIsFilamentGltf(true)
                                 .build()
                                 .thenAccept(modelRenderable -> addModel(anchor, modelRenderable))
@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     if (num.equals("2")) {
                         ModelRenderable.builder()
-                                .setSource(this, R.raw.house10)
+                                .setSource(this, R.raw.moonrider)
                                 .setIsFilamentGltf(true)
                                 .build()
                                 .thenAccept(modelRenderable -> addModel(anchor, modelRenderable))
@@ -94,7 +94,31 @@ public class MainActivity extends AppCompatActivity {
                     }
                     if (num.equals("3")) {
                         ModelRenderable.builder()
-                                .setSource(this, R.raw.r8)
+                                .setSource(this, R.raw.spacestation)
+                                .setIsFilamentGltf(true)
+                                .build()
+                                .thenAccept(modelRenderable -> addModel(anchor, modelRenderable))
+                                .exceptionally(throwable -> {
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                                    builder.setMessage("Ошибка" + throwable.getMessage()).show();
+                                    return null;
+                                });
+                    }
+                    if (num.equals("4")) {
+                        ModelRenderable.builder()
+                                .setSource(this, R.raw.statua)
+                                .setIsFilamentGltf(true)
+                                .build()
+                                .thenAccept(modelRenderable -> addModel(anchor, modelRenderable))
+                                .exceptionally(throwable -> {
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                                    builder.setMessage("Ошибка" + throwable.getMessage()).show();
+                                    return null;
+                                });
+                    }
+                    if (num.equals("5")) {
+                        ModelRenderable.builder()
+                                .setSource(this, R.raw.tank)
                                 .setIsFilamentGltf(true)
                                 .build()
                                 .thenAccept(modelRenderable -> addModel(anchor, modelRenderable))
